@@ -5,6 +5,8 @@ import os.path
 import json
 import argparse
 
+def sortByDate(el):
+    return el["date"]
 
 def getJsonBoulderScorecards(sid, user_ids):
     
@@ -15,9 +17,10 @@ def getJsonBoulderScorecards(sid, user_ids):
         print("  Getting ticklist(s) from 8a.....")
         for user_id in user_ids:
             print("    Getting {}s ticklist from 8a.....".format(user_id))
-            r = session.get("http://localhost:8080/{}/{}".format(sid, user_id), timeout=60)
+            r = session.get("http://localhost:8080/{}/{}".format(sid, user_id), timeout=120)
             print("    ...done {}".format(r))
             ret[user_id] = json.loads(r.content)
+            ret[user_id]["ascents"].sort(key=sortByDate)
 
     return ret
 
