@@ -11,5 +11,5 @@
 Currently I am unable to properly authenticate with my proxy server through 8a's keycloak authentication process. For now I am using this proxy,
 to allow rapid fetching of my friends and my JSON scorecards. I will host them like I used to with the old 8a to give a "snapshot". To run, start the proxy server locally then, simply run:
 ```
-python3 ./src/python-scraper/scraper.py --out_dir "./out-json" "s%3AV1sg8i3N3DkBBHinEQITur2T4xgOX_nY.gaGHVT9COZwUkWIVrPYe6M3W3lnhEDSR7%2BQKlBb1plE" "david-vasko,alan-nalitch,zev-fineman,kody-shutt,fanny-dong,dirk-irector,chris-rush,chris-hoss-99e8l,l-i-b,natalie-udelarms,scooter-limb"
+python3 ./src/python-scraper/scraper.py --out_dir "./out-json" "s%3AzYFYz0KKf1vYf29rGtcbQKmyC4po4qwg.NEhMIm%2BLjfQnJzGxYRC%2BfK6AH%2FmADoaH6qf3nMQg3ag" "david-vasko,shirley-girth,zev-fineman,kody-shutt,fanny-dong,dirk-irector,chris-rush,chris-hoss-99e8l,l-i-b,natalie-udelarms,scooter-limb,winifred-affleman"
 ```

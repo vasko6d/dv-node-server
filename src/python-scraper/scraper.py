@@ -6,7 +6,7 @@ import json
 import argparse
 
 def sortByDate(el):
-    return el["date"]
+    return (el["date"], el["zlaggableSlug"])
 
 def getJsonBoulderScorecards(sid, user_ids):
     
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     scorecards = getJsonBoulderScorecards(args.sid, args.user_ids.split(','))
 
     for user_id in scorecards:
-        print("    Writing {}s ticklist to {}{}.json".format(user_id, args.out_dir, user_id))
+        print("    Writing {}s ticklist to {}/{}.json".format(user_id, args.out_dir, user_id))
         with open(args.out_dir + "/" + user_id + '.json', 'w') as of:
             json.dump(scorecards[user_id], of, ensure_ascii=False, indent=4)
     print("...done")
