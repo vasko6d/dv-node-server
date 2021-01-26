@@ -8,6 +8,9 @@ import argparse
 def sortByDate(el):
     return (el["date"], el["zlaggableSlug"])
 
+def climbKey(ascent):
+    return ("area-blank" if ascent["areaSlug"] is None else ascent["areaSlug"]) + ascent["cragSlug"] + ascent["sectorSlug"] + ascent["zlaggableSlug"]
+
 def getJsonBoulderScorecards(sid, user_ids):
     
     print("Starting 8a scrape")
@@ -20,6 +23,17 @@ def getJsonBoulderScorecards(sid, user_ids):
             r = session.get("http://localhost:8080/{}/{}".format(sid, user_id), timeout=120)
             print("    ...done {}".format(r))
             ret[user_id] = json.loads(r.content)
+
+            r = session.get("http://localhost:8080/recommend/{}/{}".format(sid, user_id), timeout=120)
+            recommends = json.loads(r.content)["ascents"]
+            recommendMap = {}
+            for recommend in recommends:
+                recommendMap[climbKey(recommend)] = True
+
+            for ascent in ret[user_id]["ascents"]:
+                if climbKey(ascent) in recommendMap:
+                    ascent["recommend"] = True
+
             ret[user_id]["ascents"].sort(key=sortByDate)
 
     return ret

@@ -38,6 +38,31 @@ app.get('/:sid/:userId', (req, res) => {
   });
 });
 
+app.get('/recommend/:sid/:userId', (req, res) => {
+  // eslint-disable-next-line no-console
+  console.log(`Request Path: ${req.url}`);
+  axios.request({
+    url: `${eightaUrl}/users/${req.params.userId}/recommended?pageIndex=0&pageSize=0`,
+    headers: {
+      ...getAscentHeaders,
+      cookie: `connect.sid=${req.params.sid}`,
+    },
+    method: 'GET',
+  }).then((resp) => {
+    axios.request({
+      url: `${eightaUrl}/users/${req.params.userId}/recommended?pageIndex=0&pageSize=${resp.data.totalItems}`,
+      headers: {
+        ...getAscentHeaders,
+        cookie: `connect.sid=${req.params.sid}`,
+      },
+    }).then((allAscentResp) => {
+      res.send(allAscentResp.data);
+    });
+  }).catch((e) => {
+    res.send({ statusCode: 500, error: e });
+  });
+});
+
 // start the Express server
 app.listen(port, () => {
   // eslint-disable-next-line no-console
