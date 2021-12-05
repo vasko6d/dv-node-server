@@ -38,18 +38,42 @@ def getJsonBoulderScorecards(sid, user_ids):
 
     return ret
 
+def getJsonBoulderScorecardsFromLocal(user_ids):
+    
+    print("Starting 8a scrape")
+    ret = {}
+
+    print("  Getting ticklist(s) from local.....")
+    for user_id in user_ids:
+        print("    Getting {}s ticklist from local.....".format(user_id))
+        with open("./raw-8a-json/{}.json".format(user_id), 'r') as f:
+            ret[user_id] = json.load(f)
+
+        for ascent in ret[user_id]["ascents"]:
+            if climbKey(ascent) in recommendMap:
+                ascent["recommend"] = True
+
+        ret[user_id]["ascents"].sort(key=sortByDate)
+
+    return ret
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser( description='Pull json scorecards')
     parser.add_argument('sid', type=str, help='The Session ID Cookie to allow API access')
     parser.add_argument('user_ids', type=str, help='The user IDs you wish to scrape, separated by ","s no spaces')
     parser.add_argument('--out_dir', type=str, default='./',help='Destination folder. Filenames will be "user_id".json')
+    parser.add_argument('--use_manual_json', type=bool, default=False, help='8a.nu APIs suck. a flag to just use manually saved JSON files')
     args = parser.parse_args()
 
-    scorecards = getJsonBoulderScorecards(args.sid, args.user_ids.split(','))
+    if (args.use_manual_json):
+        scorecards = getJsonBoulderScorecardsFromLocal(args.user_ids.split(','))
+    else:
+        scorecards = getJsonBoulderScorecards(args.sid, args.user_ids.split(','))
 
     for user_id in scorecards:
         print("    Writing {}s ticklist to {}/{}.json".format(user_id, args.out_dir, user_id))
         with open(args.out_dir + "/" + user_id + '.json', 'w') as of:
             json.dump(scorecards[user_id], of, ensure_ascii=False, indent=4)
+
     print("...done")
 
