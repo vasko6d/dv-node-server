@@ -2,7 +2,7 @@ import express from 'express';
 import axios from 'axios';
 
 const app = express();
-const port = 8080; // default port to listen
+const port = 8091; // default port to listen
 const eightaUrl = 'https://www.8a.nu/api';
 const getAscentHeaders = {
   accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -13,7 +13,7 @@ const getAscentHeaders = {
   'upgrade-insecure-requests': '1',
 };
 
-app.get('/:sid/:userId', (req, res) => {
+app.get('/:sid/:userId', (req: any, res: any) => {
   // eslint-disable-next-line no-console
   console.log(`Request Path: ${req.url}`);
   axios.request({
@@ -38,7 +38,7 @@ app.get('/:sid/:userId', (req, res) => {
   });
 });
 
-app.get('/recommend/:sid/:userId', (req, res) => {
+app.get('/recommend/:sid/:userId', (req: any, res: any) => {
   // eslint-disable-next-line no-console
   console.log(`Request Path: ${req.url}`);
   axios.request({

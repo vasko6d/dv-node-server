@@ -20,19 +20,19 @@ def getJsonBoulderScorecards(sid, user_ids):
         print("  Getting ticklist(s) from 8a.....")
         for user_id in user_ids:
             print("    Getting {}s ticklist from 8a.....".format(user_id))
-            r = session.get("http://localhost:8080/{}/{}".format(sid, user_id), timeout=120)
+            r = session.get("http://localhost:8091/{}/{}".format(sid, user_id), timeout=120)
             print("    ...done {}".format(r))
             ret[user_id] = json.loads(r.content)
 
-            r = session.get("http://localhost:8080/recommend/{}/{}".format(sid, user_id), timeout=120)
-            recommends = json.loads(r.content)["ascents"]
-            recommendMap = {}
-            for recommend in recommends:
-                recommendMap[climbKey(recommend)] = True
+            # r = session.get("http://localhost:8091/recommend/{}/{}".format(sid, user_id), timeout=120)
+            # recommends = json.loads(r.content)["ascents"]
+            # recommendMap = {}
+            # for recommend in recommends:
+            #     recommendMap[climbKey(recommend)] = True
 
-            for ascent in ret[user_id]["ascents"]:
-                if climbKey(ascent) in recommendMap:
-                    ascent["recommend"] = True
+            # for ascent in ret[user_id]["ascents"]:
+            #     if climbKey(ascent) in recommendMap:
+            #         ascent["recommend"] = True
 
             ret[user_id]["ascents"].sort(key=sortByDate)
 
@@ -46,15 +46,9 @@ def getJsonBoulderScorecardsFromLocal(user_ids):
     print("  Getting ticklist(s) from local.....")
     for user_id in user_ids:
         print("    Getting {}s ticklist from local.....".format(user_id))
-        with open("./raw-8a-json/{}.json".format(user_id), 'r') as f:
+        with open("./raw-8a-json/{}.json".format(user_id), 'r', encoding='utf-8') as f:
             ret[user_id] = json.load(f)
-
-        for ascent in ret[user_id]["ascents"]:
-            if climbKey(ascent) in recommendMap:
-                ascent["recommend"] = True
-
         ret[user_id]["ascents"].sort(key=sortByDate)
-
     return ret
 
 if __name__ == "__main__":
@@ -71,9 +65,14 @@ if __name__ == "__main__":
         scorecards = getJsonBoulderScorecards(args.sid, args.user_ids.split(','))
 
     for user_id in scorecards:
-        print("    Writing {}s ticklist to {}/{}.json".format(user_id, args.out_dir, user_id))
-        with open(args.out_dir + "/" + user_id + '.json', 'w') as of:
-            json.dump(scorecards[user_id], of, ensure_ascii=False, indent=4)
-
+         print("    Writing {}s ticklist to {}/{}.json".format(user_id, args.out_dir, user_id))
+         with open(args.out_dir + "/" + user_id + '.json', 'w+', encoding='utf-8', newline='\n') as of:
+            of.write('{\r\n    "ascents": [\r\n')
+            for index, ascent in enumerate(scorecards[user_id]["ascents"]):
+                of.write("        ")
+                json.dump(ascent, of, ensure_ascii=True, separators=(',', ':'))
+                if index != len(scorecards[user_id]["ascents"]) - 1:
+                    of.write(",\r\n")
+            of.write('\r\n    ]\r\n}')
     print("...done")
 
