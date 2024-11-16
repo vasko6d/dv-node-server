@@ -1,9 +1,7 @@
 import requests
-import datetime
-import re
-import os.path
 import json
 import argparse
+import copy
 
 def sortByDate(el):
     return (el["date"], el["zlaggableSlug"])
@@ -68,10 +66,23 @@ if __name__ == "__main__":
          print("    Writing {}s ticklist to {}/{}.json".format(user_id, args.out_dir, user_id))
          with open(args.out_dir + "/" + user_id + '.json', 'w+', encoding='utf-8', newline='\n') as of:
             of.write('{\r\n    "ascents": [\r\n')
-            for index, ascent in enumerate(scorecards[user_id]["ascents"]):
+            ascents = scorecards[user_id]["ascents"]
+            unique_set = set()
+            for index, ascent in enumerate(ascents):
+
+                # Remove Duplicate Entry Logic
+                tmp_ascent = ascent
+                ascent_without_id = copy.copy(ascent)
+                del ascent_without_id["ascentId"]
+                full_hashed_ascent_key = json.dumps(ascent_without_id, ensure_ascii=True, separators=(',', ':'))
+                if full_hashed_ascent_key in unique_set:
+                    print("      > Duplicate Entry Skipped: {}".format(ascent["zlaggableSlug"]))
+                    continue
+                unique_set.add(full_hashed_ascent_key)
+
                 of.write("        ")
                 json.dump(ascent, of, ensure_ascii=True, separators=(',', ':'))
-                if index != len(scorecards[user_id]["ascents"]) - 1:
+                if index != len(ascents) - 1:
                     of.write(",\r\n")
             of.write('\r\n    ]\r\n}')
     print("...done")
