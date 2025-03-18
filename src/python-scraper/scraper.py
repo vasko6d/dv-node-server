@@ -55,6 +55,7 @@ if __name__ == "__main__":
     parser.add_argument('user_ids', type=str, help='The user IDs you wish to scrape, separated by ","s no spaces')
     parser.add_argument('--out_dir', type=str, default='./',help='Destination folder. Filenames will be "user_id".json')
     parser.add_argument('--use_manual_json', type=bool, default=False, help='8a.nu APIs suck. a flag to just use manually saved JSON files')
+    parser.add_argument('--verbose', type=bool, default=False, help='Log a bit more to the console')
     args = parser.parse_args()
 
     if (args.use_manual_json):
@@ -75,8 +76,10 @@ if __name__ == "__main__":
                 ascent_without_id = copy.copy(ascent)
                 del ascent_without_id["ascentId"]
                 full_hashed_ascent_key = json.dumps(ascent_without_id, ensure_ascii=True, separators=(',', ':'))
-                if full_hashed_ascent_key in unique_set:
+                if full_hashed_ascent_key in unique_set and ascent["zlaggableSlug"] != "unknown":
                     print("      > Duplicate Entry Skipped: {}".format(ascent["zlaggableSlug"]))
+                    if args.verbose:
+                        print("\n        {}\n".format(full_hashed_ascent_key))
                     continue
                 unique_set.add(full_hashed_ascent_key)
 
