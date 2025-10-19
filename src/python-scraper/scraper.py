@@ -71,7 +71,7 @@ if __name__ == "__main__":
             unique_set = set()
             for index, ascent in enumerate(ascents):
 
-                # Remove Duplicate Entry Logic
+                # Remove Duplicate Entry Logic - ignoreing "unknown" zlaggableSlugs
                 tmp_ascent = ascent
                 ascent_without_id = copy.copy(ascent)
                 del ascent_without_id["ascentId"]
@@ -80,6 +80,7 @@ if __name__ == "__main__":
                     print("      > Duplicate Entry Skipped: {}".format(ascent["zlaggableSlug"]))
                     if args.verbose:
                         print("\n        {}\n".format(full_hashed_ascent_key))
+                    # TODO: Need to clean up trailing comma if last entru is a duplicate - 8a just fixed some duplicate entries
                     continue
                 unique_set.add(full_hashed_ascent_key)
 
