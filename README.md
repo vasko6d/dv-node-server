@@ -15,8 +15,9 @@ python3 ./src/python-scraper/scraper.py --out_dir "./out-json" "broken(>.<)" "da
 ```
 ```
 python3 ./src/python-scraper/scraper.py --out_dir "./out-json" "" "david-vasko,shirley-girth,kody-shutt,l-i-b,winifred-affleman"
-python ..\dv-node-server\src\python-scraper\scraper.py "sid" "aden-parker,bjork-erylsofcash,chris-rush,david-vasko,dirk-irector,d-w,fanny-dong,gustavo-moser,ishmael-matinyman,kody-shutt,l-i-b,natalie-udelarms,pinch-nick,ryan-bauer,scooter-limb,shirley-girth,tanner-ott,winifred-affleman,zev-fineman,john-chipouras,kevin-scott,marcus-lacavera" --out_dir "./out-json" --use_manual_json true
+python ..\dv-node-server\src\python-scraper\scraper.py "sid" "aden-parker,bella-iscuit,chris-rush,david-vasko,dirk-irector,d-w,fanny-dong,gustavo-moser,ishmael-matinyman,kody-shutt,l-i-b,natalie-udelarms,pinch-nick,ryan-bauer,scooter-limb,shirley-girth,tanner-ott,winifred-affleman,zev-fineman,john-chipouras,kevin-scott,marcus-lacavera" --out_dir "./out-json" --use_manual_json true
 python ..\dv-node-server\src\python-scraper\scraper.py "sid" "david-vasko" --out_dir "./out-json" --use_manual_json true
 python ./src/python-scraper/scraper.py "sid" "aden-parker,david-vasko,d-w,soCal-royalty,dirk-irector" --out_dir "./out-json" --use_manual_json true
+python ./src/python-scraper/scraper.py "sid" "aden-parker,bella-iscuit,d-w,david-vasko,dirk-irector,fanny-dong,hal-ford,ishmael-matinyman,kody-shutt,shirley-girth,soCal-royalty,thelonious-elliott,winifred-affleman" --out_dir "./out-json" --use_manual_json true
 ```
 NOTE: SoCal Royalty Slug is: marcus-lacavera-vxm76
