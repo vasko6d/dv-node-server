@@ -89,6 +89,10 @@ if [ ${#out_files[@]} -eq 0 ]; then
   exit 1
 fi
 
+echo "Generating manifest.json..."
+npx ts-node src/generate-manifest.ts
+out_files=(out-json/*.json)
+
 echo "Publishing ${#out_files[@]} file(s) to $DEST_DIR (overwriting existing contents)..."
 mkdir -p "$DEST_DIR"
 rm -f "$DEST_DIR"/*.json

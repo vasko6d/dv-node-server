@@ -5,6 +5,7 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "start:watch": "nodemon",
+    "generate-manifest": "ts-node src/generate-manifest.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "nodemonConfig": {
