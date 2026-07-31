@@ -143,6 +143,20 @@ export async function fetchAllAscents(userId: string): Promise<any> {
   return fetchAscents(userId, MAX_ASCENTS_PAGE_SIZE);
 }
 
+const DEFAULT_JITTER_MIN_MS = 500;
+const DEFAULT_JITTER_MAX_MS = 5000;
+
+// Small random delay to insert between consecutive 8a.nu calls (e.g. when
+// looping over many users in a batch) so the traffic pattern doesn't look
+// like a metronomic bot hammering the API back-to-back.
+export function sleepJitter(
+  minMs: number = DEFAULT_JITTER_MIN_MS,
+  maxMs: number = DEFAULT_JITTER_MAX_MS,
+): Promise<void> {
+  const delay = minMs + Math.random() * (maxMs - minMs);
+  return new Promise((resolve) => { setTimeout(resolve, delay); });
+}
+
 export async function closeEightABrowser(): Promise<void> {
   if (context) {
     await context.close();

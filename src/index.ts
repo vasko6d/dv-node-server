@@ -2,7 +2,7 @@ import express from 'express';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import { fetchAllAscents } from './eightA-auth';
+import { fetchAllAscents, sleepJitter } from './eightA-auth';
 import { checkAndRecordUpdate } from './update-rate-limit';
 import { processScorecard } from './scorecard-processor';
 
@@ -13,7 +13,13 @@ const port = 8091; // default port to listen
 
 const rawJsonDir = path.join(__dirname, '..', 'raw-8a-json');
 const outJsonDir = path.join(__dirname, '..', 'out-json');
-const friendSlugs: string[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'friends.json'), 'utf-8'));
+
+interface Friend {
+  userSlug: string;
+  enabled: boolean;
+}
+
+const friends: Friend[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'friends.json'), 'utf-8'));
 
 function loadUserTokens(): Record<string, string> {
   try {
@@ -48,27 +54,81 @@ app.get('/:userId', (req: any, res: any) => {
     .catch((e: Error) => res.send({ statusCode: 500, error: e.message }));
 });
 
-// Admin-only: refresh every configured friend's scorecard in one batch,
+// Admin-only: refresh every enabled friend's scorecard in one batch,
 // replacing the old manual "log in, visit each URL, save the JSON" workflow.
-app.post('/admin/update-all', async (req: any, res: any) => {
+// Runs as a fire-and-forget background job (see below) rather than being
+// awaited inline, since a full sweep of the friend list - now with jitter
+// between calls - can take a while and there's no need to hold the HTTP
+// request open for it.
+interface UpdateAllJob {
+  status: 'running' | 'completed';
+  startedAt: number;
+  finishedAt?: number;
+  results: Record<string, string>;
+}
+
+let currentJob: UpdateAllJob | null = null;
+
+async function runUpdateAllJob(userIds: string[]): Promise<void> {
+  // eslint-disable-next-line no-restricted-syntax
+  for (const [index, userId] of userIds.entries()) {
+    if (index > 0) {
+      // eslint-disable-next-line no-await-in-loop
+      await sleepJitter();
+    }
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const data = await fetchAllAscents(userId);
+      writeScorecard(userId, data);
+      currentJob!.results[userId] = 'ok';
+    } catch (e) {
+      currentJob!.results[userId] = `error: ${(e as Error).message}`;
+    }
+  }
+  currentJob!.status = 'completed';
+  currentJob!.finishedAt = Date.now();
+}
+
+app.post('/admin/update-all', (req: any, res: any) => {
   if (!requireBearerToken(process.env.EIGHTA_ADMIN_API_TOKEN, req)) {
     res.status(401).send({ error: 'unauthorized' });
     return;
   }
 
-  const results: Record<string, string> = {};
-  // eslint-disable-next-line no-restricted-syntax
-  for (const userId of friendSlugs) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const data = await fetchAllAscents(userId);
-      writeScorecard(userId, data);
-      results[userId] = 'ok';
-    } catch (e) {
-      results[userId] = `error: ${(e as Error).message}`;
-    }
+  if (currentJob && currentJob.status === 'running') {
+    res.status(409).send({ error: 'update-all already running', job: currentJob });
+    return;
   }
-  res.send(results);
+
+  const enabledUserIds = friends.filter((f) => f.enabled).map((f) => f.userSlug);
+  const results: Record<string, string> = {};
+  friends.forEach((f) => {
+    results[f.userSlug] = f.enabled ? 'pending' : 'skipped (disabled)';
+  });
+
+  currentJob = { status: 'running', startedAt: Date.now(), results };
+  res.status(202).send({ status: 'started', totalUsers: enabledUserIds.length });
+
+  runUpdateAllJob(enabledUserIds).catch((e) => {
+    // eslint-disable-next-line no-console
+    console.error('update-all job crashed:', e);
+  });
+});
+
+// Admin-only: poll progress/results of the current or most recent
+// /admin/update-all run.
+app.get('/admin/update-all/status', (req: any, res: any) => {
+  if (!requireBearerToken(process.env.EIGHTA_ADMIN_API_TOKEN, req)) {
+    res.status(401).send({ error: 'unauthorized' });
+    return;
+  }
+
+  if (!currentJob) {
+    res.status(404).send({ error: 'no update-all job has run yet' });
+    return;
+  }
+
+  res.send(currentJob);
 });
 
 // Scaffolded self-serve refresh for a single user, gated by a per-user token
