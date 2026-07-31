@@ -2,4 +2,7 @@
 /dist
 /out-json
 /raw-8a-json
+/data
 .DS_Store
+.env
+user-tokens.json
