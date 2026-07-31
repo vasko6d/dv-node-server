@@ -177,6 +177,23 @@ Both limits reset on a rolling basis (not a fixed midnight cutoff) - "24 hours s
 back-to-back request pattern. This adds a few extra seconds per user to a full run, which is part of
 why the endpoint responds immediately and exposes a status endpoint rather than blocking.
 
+## One-click update + publish
+
+`scripts/update-and-publish.sh` is as close to a single "update everything" button as this gets
+today: it boots the server, triggers `/admin/update-all`, polls `/admin/update-all/status` every 5
+seconds until it's `completed`, copies everything from `out-json/` into
+`personal-site-vue/public/json/8a-scorecards` (overwriting whatever's there, including removing
+stale files for slugs that no longer exist), then shuts the server back down.
+
+```
+./scripts/update-and-publish.sh
+```
+
+Requires `.env` to be set up (see Setup above) - it reads `EIGHTA_ADMIN_API_TOKEN` from there. A
+visible Chromium window will pop up during the run (see the Cloudflare note in Setup) and disappear
+once it's done. Disabled friends (see `friends.json` above) aren't re-fetched, so their last
+published file is left as-is rather than being deleted.
+
 ## Manual/legacy workflow
 
 `src/python-scraper/scraper.py` still works standalone and is left untouched as a fallback:
