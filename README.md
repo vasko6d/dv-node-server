@@ -51,21 +51,56 @@ curl http://localhost:8091/david-vasko
 
 ### `POST /admin/update-all`
 
-Refreshes every user listed in `friends.json` in one batch. Requires the admin token from `.env`:
+Kicks off a background refresh of every **enabled** user listed in `friends.json` (see below).
+Requires the admin token from `.env`. Runs as a fire-and-forget job rather than blocking the
+request - a full sweep of the friend list can take a while (real browser navigations, plus jitter
+between calls - see "Jitter" below), so this responds immediately instead of holding the connection
+open:
 
 ```
 curl -X POST -H "Authorization: Bearer $EIGHTA_ADMIN_API_TOKEN" http://localhost:8091/admin/update-all
 ```
 
-For each user, writes:
+Returns `202` immediately with `{"status": "started", "totalUsers": <n>}`. If a job is already
+running, returns `409` with the in-progress job state instead of starting a second one (there's only
+one shared admin browser session, so runs don't overlap).
+
+For each enabled user, the background job writes:
 - `raw-8a-json/<userId>.json` - the raw API response (also usable by `scraper.py --use_manual_json`)
 - `out-json/<userId>.json` - the fully processed (sorted, de-duplicated) file, ready to copy into
   `personal-site-vue`
 
-Returns a per-user status object, e.g. `{"david-vasko": "ok", "some-slug": "error: ..."}` - one
-user failing (bad slug, private profile, etc.) doesn't stop the others.
+One user failing (bad slug, private profile, etc.) doesn't stop the others - see status below for
+per-user results.
 
 Not rate-limited - it's admin-only and expected to be run manually/infrequently.
+
+### `GET /admin/update-all/status`
+
+Poll the current or most-recently-finished `/admin/update-all` job. Requires the admin token:
+
+```
+curl -H "Authorization: Bearer $EIGHTA_ADMIN_API_TOKEN" http://localhost:8091/admin/update-all/status
+```
+
+Returns `404` if no job has run yet this server process. Otherwise:
+
+```json
+{
+  "status": "running",
+  "startedAt": 1785524484826,
+  "results": {
+    "david-vasko": "ok",
+    "kody-shutt": "pending",
+    "some-stale-friend": "skipped (disabled)"
+  }
+}
+```
+
+`results` values are one of `pending`, `ok`, `error: <message>`, or `skipped (disabled)` (for
+`friends.json` entries with `"enabled": false`). Once the sweep finishes, `status` becomes
+`"completed"` and a `finishedAt` timestamp is added. Job state is in-memory only - it resets if the
+server restarts.
 
 ### `POST /update/:userId`
 
@@ -87,14 +122,23 @@ but only for that one user.
 
 ### `friends.json`
 
-A plain JSON array of the 8a.nu user slugs `/admin/update-all` refreshes:
+An array of objects, one per user `/admin/update-all` can refresh:
 
 ```json
-["david-vasko", "some-friend-slug"]
+[
+  { "userSlug": "david-vasko", "enabled": true },
+  { "userSlug": "some-stale-friend", "enabled": false }
+]
 ```
 
-Edit this list directly to add/remove people. The slug is whatever appears in their profile URL
-(`8a.nu/user/<slug>`).
+- `userSlug` - whatever appears in their profile URL (`8a.nu/user/<slug>`); matches the field name
+  8a.nu's own ascent data uses.
+- `enabled` - set to `false` to exclude a user from `/admin/update-all` sweeps (e.g. a scorecard
+  that hasn't changed in years) without deleting their entry. Disabled users still show up in the
+  status response as `"skipped (disabled)"`, they're just never fetched.
+
+This only affects the batch endpoint - `GET /:userId` and `POST /update/:userId` work on whatever
+slug is in the URL regardless of what's in `friends.json`.
 
 ### `user-tokens.json` (gitignored)
 
@@ -125,6 +169,13 @@ created automatically):
 
 Both limits reset on a rolling basis (not a fixed midnight cutoff) - "24 hours since that call", not
 "24 hours since midnight".
+
+## Jitter
+
+`/admin/update-all`'s background job waits a random 0.5-5s between each user's fetch (see
+`sleepJitter` in `src/eightA-auth.ts`), so a full sweep doesn't hit 8a.nu with a metronomic
+back-to-back request pattern. This adds a few extra seconds per user to a full run, which is part of
+why the endpoint responds immediately and exposes a status endpoint rather than blocking.
 
 ## Manual/legacy workflow
 
